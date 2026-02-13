@@ -3,7 +3,7 @@
   "vulnerabilityAlerts": {
     "enabled": true
   },
-  "schedule": ["on friday"],
+  "schedule": ["* 15-19 * * *"],
   "packageRules": [
     {
       "matchManagers": ["npm"],
@@ -15,7 +15,8 @@
       "groupName": "ci",
       "matchPackagePatterns": ["*"]
     },
-    {
+    {  
+      "description": "https://github.com/backstage/backstage/issues/28080",
       "matchPackageNames": ["react"],
       "allowedVersions": "<19"
     },
