@@ -1,0 +1,46 @@
+{
+  "extends": ["config:base"],
+
+  "schedule": ["before 3am on monday"],
+
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "groupName": "ci",
+      "matchPackagePatterns": ["*"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "groupName": "ci",
+      "matchPackagePatterns": ["*"]
+    },
+
+    {
+      "matchPackageNames": ["react"],
+      "allowedVersions": "<19"
+    },
+    {
+      "matchPackageNames": ["react-dom"],
+      "allowedVersions": "<19"
+    },
+    {
+      "matchPackageNames": ["@types/react-dom"],
+      "allowedVersions": "<19"
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "groupName": "major updates"
+    },
+    {
+      "vulnerabilityAlerts": {
+      "enabled": true
+      }
+    }
+  ]
+}
