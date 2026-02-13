@@ -1,8 +1,9 @@
 {
-  "extends": ["config:base"],
-
-  "schedule": ["before 3am on monday"],
-
+  "extends": ["config:recommended"],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "schedule": ["on friday"],
   "packageRules": [
     {
       "matchManagers": ["npm"],
@@ -14,7 +15,6 @@
       "groupName": "ci",
       "matchPackagePatterns": ["*"]
     },
-
     {
       "matchPackageNames": ["react"],
       "allowedVersions": "<19"
@@ -36,11 +36,6 @@
     {
       "matchUpdateTypes": ["major"],
       "groupName": "major updates"
-    },
-    {
-      "vulnerabilityAlerts": {
-      "enabled": true
-      }
     }
   ]
 }
