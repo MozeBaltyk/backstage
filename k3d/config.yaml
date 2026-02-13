@@ -1,0 +1,36 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: mycluster
+
+network: k3d
+
+servers: 1
+agents: 1
+
+options:
+  k3s:
+    extraArgs:
+      - arg: "--disable=traefik"
+        nodeFilters:
+          - server:*
+      - arg: "--disable=servicelb"
+        nodeFilters:
+          - server:*
+      # REQUIRED for rootless Podman — SERVER and AGENT
+      - arg: "--kubelet-arg=feature-gates=KubeletInUserNamespace=true"
+        nodeFilters:
+          - server:*
+          - agent:*
+      - arg: "--kubelet-arg=fail-swap-on=false"
+        nodeFilters:
+          - server:*
+          - agent:*
+  k3d:
+    wait: true
+    timeout: "60s"
+    disableLoadbalancer: true
+
+registries:
+  use:
+    - k3d-mycluster-registry:5000
