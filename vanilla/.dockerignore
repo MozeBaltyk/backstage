@@ -1,0 +1,19 @@
+# For package/app/Dockerfile:
+# .git
+# .yarn/cache
+# .yarn/install-state.gz
+# node_modules
+# packages/*/src
+# packages/*/node_modules
+# plugins
+# *.local.yaml
+
+# For multistage builds
+.git
+dist-types
+node_modules
+packages/*/dist
+packages/*/node_modules
+plugins/*/dist
+plugins/*/node_modules
+*.local.yaml
