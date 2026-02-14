@@ -25,6 +25,7 @@ For the moment, it's a Vanilla backstage which can be use to test new templates 
 
 ```BASH 
 sed '/plugin-app-backend/d' -i packages/backend/src/index.ts
+sed '/plugin-app-backend/d' -i packages/backend/package.json
 sed '/"app": "link:../d' -i packages/backend/package.json
 yarn install
 ```
@@ -63,7 +64,17 @@ podman run -d \
 ```
 
 
-## Dev Templates 
+## Upgrade and update component
+
+* From Vanilla directory: 
+  - `yarn backstage-cli versions:bump` - Manual Backstage upgrade
+  - `yarn install` - Then install dependencies
+  - Check backstage doc if something need to be adapted in the code. 
+
+* Or init a new backstage project:
+  - `make init-backstage PROJECT_NAME=vanilla2`
+
+## Dev Backstage Templates 
 
 * To test a template:
     1. Via Backstage UI - In your Backstage instance, open Create… ➜ Register existing component. 
@@ -71,6 +82,13 @@ podman run -d \
 
 * Example: 
     [piomin](https://github.com/piomin/backstage-templates)
+
+## Pipeline
+
+Renovate is used to track dependencies and opens PR:
+  - [Renovate Dashboard](https://developer.mend.io/github/MozeBaltyk/backstage)
+
+Then the CI build frontend/backend images on PR and compare with Main and display the CVE in the PR.
 
 
 ## Sources and References

@@ -19,20 +19,30 @@ FRONTEND_CONTAINER_NAME = frontend
 FRONTEND_CONTAINER_IMAGE = ${FRONTEND_CONTAINER_NAME}:local
 
 
-## Remove the frontend from the backend.
-.PHONY: remove-frontend-from-backend
-remove-frontend-from-backend:
-	sed '/plugin-app-backend/d' -i packages/backend/src/index.ts
-	sed '/plugin-app-backend/d' -i packages/backend/package.json
-	sed '/"app": "link:../d' -i packages/backend/package.json
+## Split the frontend from the backend.
+.PHONY: split-frontend-from-backend
+split-frontend-from-backend:
+ifndef PROJECT_DIR
+	$(error PROJECT_DIR is not set. Usage: make split-frontend-from-backend PROJECT_DIR=your-app)
+endif
+	sed '/plugin-app-backend/d' -i $(PROJECT_DIR)/packages/backend/src/index.ts
+	sed '/plugin-app-backend/d' -i $(PROJECT_DIR)/packages/backend/package.json
+	sed '/"app": "link:../d' -i $(PROJECT_DIR)/packages/backend/package.json
 	yarn install
 
-## Remove better-sqlite3 from backend.
-.PHONY: remove-better-sqlite3
-remove-better-sqlite3:
-	sed '/sqlite-dev/d' -i Dockerfile
-	sed '/better-sqlite3/d' -i packages/backend/package.json
-	yarn install
+## Usage: make init-backstage PROJECT_NAME=my-app
+.PHONY: init-backstage remove-frontend-from-backend remove-better-sqlite3
+init-backstage:
+ifndef PROJECT_NAME
+	$(error PROJECT_NAME is not set. Usage: make init-backstage PROJECT_NAME=your-app)
+endif
+	@echo "Creating Backstage app: $(PROJECT_NAME)"
+	@echo $(PROJECT_NAME) | npx @backstage/create-app@latest
+	@$(MAKE) split-frontend-from-backend PROJECT_DIR=$(PROJECT_NAME)
+	@cp -r ./common/container-config ./$(PROJECT_NAME)/container-config
+	@cp -r ./common/.dockerignore ./$(PROJECT_NAME)/.
+	@cp -r ./common/Containerfile.* ./$(PROJECT_NAME)/.
+	@echo "Backstage app $(PROJECT_NAME) initialized successfully."
 
 ## k3d - Create cluster.
 .PHONY: k3d-create-cluster
