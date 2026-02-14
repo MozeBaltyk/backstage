@@ -34,7 +34,7 @@
 #       docker build -t backstage-frontend -f Dockerfile.dockerbuild .
 
 
-FROM node:24-alpine AS build
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 RUN mkdir /app
 COPY . /app
 WORKDIR /app

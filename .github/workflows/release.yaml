@@ -16,22 +16,12 @@ concurrency:
 
 env:
   IMAGE_TAG: ${{ github.ref_name }}
-  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  REGISTRY: ghcr.io/MozeBaltyk
   FRONTEND_IMAGE_NAME: backstage-frontend
   BACKEND_IMAGE_NAME: backstage-backend
   CONTEXT_DIR: vanilla
 
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      OWNER_LOWER: ${{ steps.lower.outputs.owner }}
-    steps:
-      - name: Lowercase repository owner
-        id: lower
-        run: |
-          echo "owner=$(echo '${GITHUB_REPOSITORY_OWNER}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
   build-push-frontend:
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
@@ -49,7 +39,7 @@ jobs:
       set-meta-labels: true
       set-meta-annotations: true
       meta-images: |
-        ghcr.io/${{ needs.prepare.outputs.OWNER_LOWER }}/backstage-frontend
+        ghcr.io/MozeBaltyk/backstage-frontend
       meta-tags: |
         type=ref,event=tag
         latest
@@ -76,7 +66,7 @@ jobs:
       set-meta-labels: true
       set-meta-annotations: true
       meta-images: |
-        ghcr.io/${{ needs.prepare.outputs.OWNER_LOWER }}/backstage-backend
+        ghcr.io/MozeBaltyk/backstage-backend
       meta-tags: |
         type=ref,event=tag
         latest
