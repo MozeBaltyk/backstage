@@ -16,7 +16,7 @@ concurrency:
 
 env:
   IMAGE_TAG: ${{ github.ref_name }}
-  REGISTRY: ghcr.io/MozeBaltyk
+  REGISTRY: ghcr.io/mozebaltyk
   FRONTEND_IMAGE_NAME: backstage-frontend
   BACKEND_IMAGE_NAME: backstage-backend
   CONTEXT_DIR: vanilla
@@ -39,7 +39,7 @@ jobs:
       set-meta-labels: true
       set-meta-annotations: true
       meta-images: |
-        ghcr.io/MozeBaltyk/backstage-frontend
+        ghcr.io/mozebaltyk/backstage-frontend
       meta-tags: |
         type=ref,event=tag
         latest
@@ -66,7 +66,7 @@ jobs:
       set-meta-labels: true
       set-meta-annotations: true
       meta-images: |
-        ghcr.io/MozeBaltyk/backstage-backend
+        ghcr.io/mozebaltyk/backstage-backend
       meta-tags: |
         type=ref,event=tag
         latest
