@@ -33,11 +33,11 @@ jobs:
       setup-qemu: true
       file: Containerfile.frontend
       sbom: true
-      context: ${{ env.CONTEXT_DIR }}
+      context: vanilla
       set-meta-labels: true
       set-meta-annotations: true
       meta-images: |
-        ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}
+        ghcr.io/${{ github.repository_owner }}/backstage-frontend
       meta-tags: |
         type=ref,event=tag
         latest
@@ -87,7 +87,7 @@ jobs:
       - name: Build and push backend container image
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.CONTEXT_DIR }}
+          context: vanilla
           platforms: linux/amd64,linux/arm64
           file: Containerfile.backend
           push: true
