@@ -48,6 +48,9 @@ jobs:
         - registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+        - registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
   build-push-backend:
     uses: docker/github-builder/.github/workflows/build.yml@v1
@@ -75,6 +78,9 @@ jobs:
         - registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+        - registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
   scan:
     runs-on: ubuntu-24.04
@@ -90,7 +96,7 @@ jobs:
           command: cves
           sarif-file: sarif-backend.output.json
           summary: true
-          image: registry://${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          image: registry://ghcr.io/mozebaltyk/backstage-backend:${{ github.ref_name }}
 
       - name: Upload backend SARIF report
         uses: github/codeql-action/upload-sarif@v4
@@ -103,7 +109,7 @@ jobs:
           command: cves
           sarif-file: sarif-frontend.output.json
           summary: true
-          image: registry://${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          image: registry://ghcr.io/mozebaltyk/backstage-frontend:${{ github.ref_name }}
 
       - name: Upload frontend SARIF report
         uses: github/codeql-action/upload-sarif@v4
