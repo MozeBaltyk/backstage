@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -37,7 +39,7 @@ jobs:
       set-meta-labels: true
       set-meta-annotations: true
       meta-images: |
-        ghcr.io/${{ github.repository_owner }}/backstage-frontend
+        ghcr.io/${{ toLower(github.repository_owner) }}/backstage-frontend
       meta-tags: |
         type=ref,event=tag
         latest
@@ -48,54 +50,31 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
   build-push-backend:
-    runs-on: ubuntu-24.04
+    uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
       id-token: write
       packages: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login \
-            ghcr.io \
-            -u "${{ github.actor }}" \
-            --password-stdin
-
-      # Needed for Makefile
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-
-      - name: Remove frontend from backend
-        run: |
-          export YARN_ENABLE_IMMUTABLE_INSTALLS=false
-          make remove-frontend-from-backend
-
-      - name: Remove better-sqlite3
-        run: |
-          export YARN_ENABLE_IMMUTABLE_INSTALLS=false
-          make remove-better-sqlite3
-
-      - name: Build and push backend container image
-        uses: docker/build-push-action@v6
-        with:
-          context: vanilla
-          platforms: linux/amd64,linux/arm64
-          file: Containerfile.backend
-          push: true
-          provenance: mode=max
-          sbom: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:latest
+    with:
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      runner: amd64
+      setup-qemu: true
+      file: Containerfile.backend
+      sbom: true
+      context: vanilla
+      set-meta-labels: true
+      set-meta-annotations: true
+      meta-images: |
+        ghcr.io/${{ toLower(github.repository_owner) }}/backstage-backend
+      meta-tags: |
+        type=ref,event=tag
+        latest
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
   scan:
     runs-on: ubuntu-24.04
