@@ -8,15 +8,23 @@ network: k3d
 servers: 1
 agents: 1
 
+ports:
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 8443:443
+    nodeFilters:
+      - loadbalancer
+
 options:
   k3s:
     extraArgs:
-      - arg: "--disable=traefik"
-        nodeFilters:
-          - server:*
-      - arg: "--disable=servicelb"
-        nodeFilters:
-          - server:*
+      # - arg: "--disable=traefik"
+      #   nodeFilters:
+      #     - server:*
+      # - arg: "--disable=servicelb"
+      #   nodeFilters:
+      #     - server:*
       # REQUIRED for rootless Podman — SERVER and AGENT
       - arg: "--kubelet-arg=feature-gates=KubeletInUserNamespace=true"
         nodeFilters:
@@ -29,7 +37,6 @@ options:
   k3d:
     wait: true
     timeout: "60s"
-    disableLoadbalancer: true
 
 registries:
   use:

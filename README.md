@@ -1,7 +1,7 @@
 # Backstage Vanilla
 
 A Backstage Vanilla with:
-- Pipeline to Build image
+- Pipeline to Build image and test images
 - Split frontend and backend
 - Hardened images and unprivileged containers
 - Renovate to auto-update and track security alerts
@@ -23,7 +23,8 @@ For the moment, it's a Vanilla backstage which can be use to test new templates 
 
 * Split Frontend and Backend following [doc](https://backstage.io/docs/deployment/docker/#separate-frontend) (already done in Vanilla)
 
-```BASH 
+```BASH
+cd vanilla
 sed '/plugin-app-backend/d' -i packages/backend/src/index.ts
 sed '/plugin-app-backend/d' -i packages/backend/package.json
 sed '/"app": "link:../d' -i packages/backend/package.json
@@ -39,8 +40,8 @@ yarn install
     6. `yarn start`
 
 * Build *frontend* and *backend* images:
-    1. `podman build -f Containerfile.frontend -t frontend:local . --progress=plain --no-cache`
-    2. `podman build -f Containerfile.backend  -t backend:local . --progress=plain --no-cache`
+    1. `cd vanilla; podman build -f Containerfile.frontend -t frontend:local . --progress=plain --no-cache; cd -`
+    2. `cd vanilla; podman build -f Containerfile.backend  -t backend:local . --progress=plain --no-cache; cd -`
  
 * Test locally images (unprivileged images)
 
@@ -63,6 +64,29 @@ podman run -d \
     frontend:local
 ```
 
+* Test it on k3d (obviously k3d cluster deployed with internal registry is required ):
+
+> [Important]
+>
+> Obviously k3d cluster deployed with internal registry is required here...
+> Plus `localhost:5000/backstage-backend:local` and `localhost:5000/backstage-frontend:local` to be build and pushed to k3d registry.
+> 
+> `podman tag frontend:local localhost:5000/backstage-frontend:local && podman push localhost:5000/backstage-frontend:local`\
+> `podman tag backend:local localhost:5000/backstage-backend:local && podman push localhost:5000/backstage-backend:local `
+
+```BASH
+# Add backstage repo 
+helm repo add backstage https://backstage.github.io/charts
+helm repo update
+
+# Check the manifest
+helm template backstage/backstage -f helm/values-backstage.yaml -n backstage
+
+# Deploy with helm
+helm upgrade --install backstage backstage/backstage -n backstage --create-namespace  -f helm/values-backstage.yaml
+```
+
+link to front: `http://backstage.localhost:8080`
 
 ## Upgrade and update component
 
@@ -83,13 +107,43 @@ podman run -d \
 * Example: 
     [piomin](https://github.com/piomin/backstage-templates)
 
+
+## Handle plugins 
+
+* Install backstage plugins
+
+```bash
+yarn --cwd packages/app add @backstage/plugin-home
+yarn --cwd packages/app add @backstage-community/plugin-tech-radar
+yarn --cwd packages/backend add @backstage/plugin-auth-backend-module-guest-provider
+yarn --cwd packages/app add @backstage/plugin-kubernetes
+yarn --cwd packages/backend add @backstage/plugin-kubernetes-backend
+yarn --cwd packages/app add @backstage/plugin-kubernetes-cluster/alpha
+yarn --cwd packages/backend add @headlamp-k8s/backstage-plugin-headlamp-backend
+yarn --cwd packages/app add @headlamp-k8s/backstage-plugin-headlamp
+```
+
+* Create a custom new plugins: 
+
+> Backstage is a shell. Plugins are what make it a platform.
+
+```BASH
+cd vanilla
+yarn new --select frontend-plugin
+yarn new --select backend-plugin
+
+# test it
+curl localhost:7007/plugin-name/health
+```
+
 ## Pipeline
 
 Renovate is used to track dependencies and opens PR:
   - [Renovate Dashboard](https://developer.mend.io/github/MozeBaltyk/backstage)
 
-Then the CI build frontend/backend images on PR and compare with Main and display the CVE in the PR.
-
+Github Workflows:
+  - the CI build frontend/backend images and display the CVE on the PR.
+  - Release Build and deliver the images
 
 ## Sources and References
 
@@ -106,3 +160,6 @@ Then the CI build frontend/backend images on PR and compare with Main and displa
 3. Hardening images:
     - [Inspired by](https://medium.com/google-cloud/harden-your-containerized-backstage-app-for-kubernetes-6bcab5f0bf87)
     - [The next steps](https://itnext.io/go-distroless-with-your-backstage-app-with-docker-hardened-images-dhi-b61539ffbf00)
+
+4. Best pratices and goals:
+    - [To go in Prod](https://medium.com/@sumit.kaul.87/backstage-in-production-from-developer-portal-to-platform-operating-system-0083121c28b1)

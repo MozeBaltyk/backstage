@@ -44,26 +44,52 @@ endif
 	@cp -r ./common/Containerfile.* ./$(PROJECT_NAME)/.
 	@echo "Backstage app $(PROJECT_NAME) initialized successfully."
 
+## Build backstage frontend and backend images
+.PHONY: build-frontend-backend-images
+build-frontend-backend-images:
+	@echo "Building frontend image..."
+	cd vanilla && podman build -f Containerfile.frontend -t frontend:local . --progress=plain --no-cache
+	@echo "Building backend image..."
+	cd vanilla && podman build -f Containerfile.backend -t backend:local . --progress=plain --no-cache
+	@echo "Checking if local registry is available..."
+	@if curl -s http://localhost:5000/v2/_catalog > /dev/null 2>&1; then \
+		echo "Registry detected. Tagging and pushing images..."; \
+		podman tag frontend:local localhost:5000/backstage-frontend:local; \
+		podman push localhost:5000/backstage-frontend:local; \
+		podman tag backend:local localhost:5000/backstage-backend:local; \
+		podman push localhost:5000/backstage-backend:local; \
+	else \
+		echo "Local registry not available. Skipping push."; \
+	fi
+
 ## k3d - Create cluster.
 .PHONY: k3d-create-cluster
 k3d-create-cluster:
-	k3d cluster create backstage --agents 1 --port '80:80'
+	podman network create k3d || true
+	podman network inspect k3d -f '{{ .DNSEnabled }}' || true
+	k3d registry create mycluster-registry --default-network k3d --port 5000 || true
+	k3d cluster create --config k3d/config.yaml --registry-config k3d/registry.yaml
 
 ## k3d - Delete cluster.
 .PHONY: k3d-delete-cluster
 k3d-delete-cluster:
-	k3d cluster delete backstage
+	k3d cluster delete --config k3d/config.yaml
+	k3d registry delete k3d-mycluster-registry
+	podman network rm k3d
 
 ## k3d - Deploy Backstage to cluster.
 .PHONY: k3d-deploy-backstage
 k3d-deploy-backstage:
-	kubectl apply -f k8s/backend-deployment.yaml
-	kubectl apply -f k8s/backend-service.yaml
-	kubectl apply -f k8s/frontend-deployment.yaml
+	helm upgrade --install backstage backstage/backstage -n backstage --create-namespace  -f helm/values-backstage.yaml
+
+## k3d - Uninstall Backstage from cluster.
+.PHONY: k3d-uninstall-backstage
+k3d-uninstall-backstage:
+	helm uninstall backstage -n backstage
 
 ## k3d - Test the deployment by port-forwarding the frontend service and curling it.
 .PHONY: k3d-test-deployment
 k3d-test-deployment:
-	kubectl port-forward service/frontend 80:80 &
+	kubectl port-forward service/frontend 8080:8080 &
 	sleep 5
-	curl http://localhost:80
+	curl http://localhost:8080

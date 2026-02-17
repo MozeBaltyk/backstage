@@ -1,0 +1,160 @@
+backstage:
+  image:
+    registry: localhost:5000
+    repository: backstage-backend
+    tag: local
+    pullPolicy: Always
+
+  startupProbe:
+    failureThreshold: 30
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
+
+  # Hardcoded extra vars 
+  extraEnvVars:
+    - name: NODE_ENV
+      value: development
+    - name: APP_CONFIG_app_baseUrl
+      value: http://backstage.localhost:8080
+    - name: APP_CONFIG_backend_baseUrl
+      value: http://backstage.localhost:8080
+
+  # kubectl create secret generic backstage-secrets --from-env-file=backstage/.env -n backstage
+  # extraEnvVarsSecrets: 
+  #   - backstage-secrets
+
+  podSecurityContext:
+    runAsUser: 65532
+    runAsNonRoot: true
+    fsGroup: 65532
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+
+# Postgre Block 
+postgresql:
+  # -- Switch to enable or disable the PostgreSQL helm chart
+  enabled: true
+  # -- The authentication details of the Postgres database
+  auth:
+    username: backstage
+    password: backstagepassword
+    postgresPassword: adminpassword
+
+extraDeploy:
+  # -----------------------------
+  # Frontend Deployment
+  # -----------------------------
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: backstage-frontend
+      labels:
+        app: backstage-frontend
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: backstage-frontend
+      template:
+        metadata:
+          labels:
+            app: backstage-frontend
+        spec:
+          securityContext:
+            runAsUser: 65532
+            runAsNonRoot: true
+          containers:
+            - name: frontend
+              image: localhost:5000/backstage-frontend:local
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              ports:
+                - name: http
+                  containerPort: 8080
+              # env:
+              #   - name: PORT
+              #     value: "3000"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 5
+                periodSeconds: 10
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 15
+                periodSeconds: 20
+
+  # -----------------------------
+  # Frontend Ingress
+  # -----------------------------
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: backstage-ingress
+      annotations:
+        kubernetes.io/ingress.class: traefik
+    spec:
+      rules:
+        - host: backstage.localhost
+          http:
+            paths:
+              - path: /api
+                pathType: Prefix
+                backend:
+                  service:
+                    name: release-name-backstage
+                    port:
+                      number: 7007
+
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: backstage-frontend
+                    port:
+                      number: 3000
+
+  # -----------------------------
+  # Frontend Service
+  # -----------------------------
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: backstage-frontend
+    spec:
+      type: ClusterIP
+      selector:
+        app: backstage-frontend
+      ports:
+        - name: http-frontend
+          port: 3000
+          targetPort: 8080
