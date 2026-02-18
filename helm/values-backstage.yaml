@@ -12,18 +12,18 @@ backstage:
     successThreshold: 1
     timeoutSeconds: 2
 
-  # Hardcoded extra vars 
-  extraEnvVars:
-    - name: NODE_ENV
-      value: development
-    - name: APP_CONFIG_app_baseUrl
-      value: http://backstage.localhost:8080
-    - name: APP_CONFIG_backend_baseUrl
-      value: http://backstage.localhost:8080
-
   # kubectl create secret generic backstage-secrets --from-env-file=backstage/.env -n backstage
   # extraEnvVarsSecrets: 
   #   - backstage-secrets
+
+  # Create an backstage-app-config config-maps
+  appConfig:
+    app:
+      baseUrl: backstage-frontend.backstage.svc
+    backend:
+      baseUrl: backstage.backstage.svc
+      cors: 
+        origin: backstage.backstage.svc
 
   podSecurityContext:
     runAsUser: 65532

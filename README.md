@@ -8,6 +8,7 @@ A Backstage Vanilla with:
 
 For the moment, it's a Vanilla backstage which can be use to test new templates and plugins. 
 
+
 ## How I created this *backstage* 
 
 * Prerequisites inside **Project** directory:
@@ -32,16 +33,16 @@ yarn install
 ```
 
 * Use current **Vanilla** backstage inside `cd vanilla`: 
-    1. `cd vanilla`
-    2. `yarn clean`      - Clean `dist-types` and `dist` folders
-    3. `yarn install`    - install dependencies
-    4. `yarn tsc`        - tsc outputs type definitions in `dist-types`
-    5. `yarn build:all`  - build *app* and *backend* in `dist`  
-    6. `yarn start`
+    - `cd vanilla`
+    - `yarn clean`      - Clean `dist-types` and `dist` folders
+    - `yarn install`    - install dependencies
+    - `yarn tsc`        - tsc outputs type definitions in `dist-types`
+    - `yarn build:all`  - build *app* and *backend* in `dist`  
+    - `yarn start`
 
 * Build *frontend* and *backend* images:
-    1. `cd vanilla; podman build -f Containerfile.frontend -t frontend:local . --progress=plain --no-cache; cd -`
-    2. `cd vanilla; podman build -f Containerfile.backend  -t backend:local . --progress=plain --no-cache; cd -`
+    - `cd vanilla; podman build -f Containerfile.frontend -t frontend:local . --progress=plain --no-cache; cd -`
+    - `cd vanilla; podman build -f Containerfile.backend  -t backend:local . --progress=plain --no-cache; cd -`
  
 * Test locally images (unprivileged images)
 
@@ -88,21 +89,36 @@ helm upgrade --install backstage backstage/backstage -n backstage --create-names
 
 link to front: `http://backstage.localhost:8080`
 
+
 ## Upgrade and update component
 
 * From Vanilla directory: 
   - `yarn backstage-cli versions:bump` - Manual Backstage upgrade
   - `yarn install` - Then install dependencies
-  - Check backstage doc if something need to be adapted in the code. 
-
+  - Check backstage doc if something need to be adapted in the code with:  
+      * [upgrade-helper](https://backstage.github.io/upgrade-helper/?from=1.46.0&to=1.47.0&yarnPlugin=1)
+  
 * Or init a new backstage project:
   - `make init-backstage PROJECT_NAME=vanilla2`
+
+* Open topic: [new frontend system](https://backstage.io/docs/frontend-system/building-apps/migrating/)...
+
+## Dev Software Catalog
+
+in `app-config.yaml` 
+
+```yaml
+catalog:
+  locations:
+    - type: url
+      target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/components/artist-lookup-component.yaml
+```
 
 ## Dev Backstage Templates 
 
 * To test a template:
-    1. Via Backstage UI - In your Backstage instance, open Create… ➜ Register existing component. 
-    2. `npx @backstage/create-app --from https://raw.githubusercontent.com/ORG/REPO/main/templates.yaml`
+    - Via Backstage UI - In your Backstage instance, open Create… ➜ Register existing component. 
+    - `npx @backstage/create-app --from https://raw.githubusercontent.com/ORG/REPO/main/templates.yaml`
 
 * Example: 
     [piomin](https://github.com/piomin/backstage-templates)
