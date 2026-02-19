@@ -3138,7 +3138,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@backstage/plugin-kubernetes-backend@npm:^0.21.0":
+"@backstage/plugin-kubernetes-backend@npm:^0.21.1":
   version: 0.21.1
   resolution: "@backstage/plugin-kubernetes-backend@npm:0.21.1"
   dependencies:
@@ -3241,7 +3241,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@backstage/plugin-kubernetes@npm:^0.12.15":
+"@backstage/plugin-kubernetes@npm:^0.12.16":
   version: 0.12.16
   resolution: "@backstage/plugin-kubernetes@npm:0.12.16"
   dependencies:
@@ -14886,7 +14886,7 @@ __metadata:
     "@backstage/plugin-catalog-graph": "npm:^0.5.6"
     "@backstage/plugin-catalog-import": "npm:^0.13.9"
     "@backstage/plugin-catalog-react": "npm:^1.21.5"
-    "@backstage/plugin-kubernetes": "npm:^0.12.15"
+    "@backstage/plugin-kubernetes": "npm:^0.12.16"
     "@backstage/plugin-notifications": "npm:^0.5.13"
     "@backstage/plugin-org": "npm:^0.6.48"
     "@backstage/plugin-permission-react": "npm:^0.4.39"
@@ -15507,7 +15507,7 @@ __metadata:
     "@backstage/plugin-catalog-backend": "npm:^3.3.1"
     "@backstage/plugin-catalog-backend-module-logs": "npm:^0.1.18"
     "@backstage/plugin-catalog-backend-module-scaffolder-entity-model": "npm:^0.2.16"
-    "@backstage/plugin-kubernetes-backend": "npm:^0.21.0"
+    "@backstage/plugin-kubernetes-backend": "npm:^0.21.1"
     "@backstage/plugin-notifications-backend": "npm:^0.6.1"
     "@backstage/plugin-permission-backend": "npm:^0.7.7"
     "@backstage/plugin-permission-backend-module-allow-all-policy": "npm:^0.2.15"

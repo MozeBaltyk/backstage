@@ -7,8 +7,11 @@ A Backstage Vanilla with:
 [ ] Pipeline to Build image and test images        
 [ ] Renovate to auto-update and track security alerts      
 
-For the moment, it's a Vanilla backstage which can be use to test new templates and plugins, Test backstage or plugins upgrade... 
-As a prerequisites, you need a k3d cluster with the config in `./k3d/config.yaml`
+For the moment, it's a Vanilla backstage which can be use to test new templates and plugins, Test upgrade on backstage or plugins... 
+
+This project is meet to be fork.   
+
+As a prerequisites, it's nice to have k3d cluster with the config in `./k3d/config.yaml` to test the deployment with helm charts. 
 
 
 ## How I created this *backstage* 
@@ -96,8 +99,7 @@ link to front: `http://backstage.localhost:8080`
 
 ## Troubleshooting
 
-* Check the frontend context (app-config values pass to the front):  `curl -H "Host: backstage.localhost" http://localhost:8080`
-
+* `curl -H "Host: backstage.localhost" http://localhost:8080`
 
 
 ## Upgrade and update component
@@ -130,7 +132,7 @@ catalog:
     - Via Backstage UI - In your Backstage instance, open Create… ➜ Register existing component. 
     - `npx @backstage/create-app --from https://raw.githubusercontent.com/ORG/REPO/main/templates.yaml`
 
-* Example: 
+* Example to Dev Templates: 
     [piomin](https://github.com/piomin/backstage-templates)
 
 
