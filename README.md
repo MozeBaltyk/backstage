@@ -1,12 +1,14 @@
 # Backstage Vanilla
 
 A Backstage Vanilla with:
-- Pipeline to Build image and test images
-- Split frontend and backend
-- Hardened images and unprivileged containers
-- Renovate to auto-update and track security alerts
+[X] Split frontend and backend 
+[X] Hardened images and unprivileged containers 
+[X] Relatively small images (backend ~700MB;frontend ~200MB)
+[ ] Pipeline to Build image and test images        
+[ ] Renovate to auto-update and track security alerts      
 
-For the moment, it's a Vanilla backstage which can be use to test new templates and plugins. 
+For the moment, it's a Vanilla backstage which can be use to test new templates and plugins, Test backstage or plugins upgrade... 
+As a prerequisites, you need a k3d cluster with the config in `./k3d/config.yaml`
 
 
 ## How I created this *backstage* 
@@ -71,9 +73,12 @@ podman run -d \
 >
 > Obviously k3d cluster deployed with internal registry is required here...
 > Plus `localhost:5000/backstage-backend:local` and `localhost:5000/backstage-frontend:local` to be build and pushed to k3d registry.
-> 
-> `podman tag frontend:local localhost:5000/backstage-frontend:local && podman push localhost:5000/backstage-frontend:local`\
+>    
+> `podman tag frontend:local localhost:5000/backstage-frontend:local && podman push localhost:5000/backstage-frontend:local`
+>    
 > `podman tag backend:local localhost:5000/backstage-backend:local && podman push localhost:5000/backstage-backend:local `
+>   
+
 
 ```BASH
 # Add backstage repo 
@@ -88,6 +93,11 @@ helm upgrade --install backstage backstage/backstage -n backstage --create-names
 ```
 
 link to front: `http://backstage.localhost:8080`
+
+## Troubleshooting
+
+* Check the frontend context (app-config values pass to the front):  `curl -H "Host: backstage.localhost" http://localhost:8080`
+
 
 
 ## Upgrade and update component

@@ -11,13 +11,6 @@ help:
 .PHONY: .FORCE
 .FORCE:
 
-BACKEND_WORKLOAD_NAME = backend
-BACKEND_CONTAINER_NAME = backend
-BACKEND_CONTAINER_IMAGE = ${BACKEND_CONTAINER_NAME}:local
-FRONTEND_WORKLOAD_NAME = frontend
-FRONTEND_CONTAINER_NAME = frontend
-FRONTEND_CONTAINER_IMAGE = ${FRONTEND_CONTAINER_NAME}:local
-
 
 ## Split the frontend from the backend.
 .PHONY: split-frontend-from-backend
@@ -30,8 +23,23 @@ endif
 	sed '/"app": "link:../d' -i $(PROJECT_DIR)/packages/backend/package.json
 	yarn install
 
+## Remove SQLite3 from backstage
+.PHONY: remove-better-sqlite3
+remove-better-sqlite3:
+ifndef PROJECT_DIR
+	$(error PROJECT_DIR is not set. Usage: make split-frontend-from-backend PROJECT_DIR=your-app)
+endif
+	@echo "Removing sqlite-dev installation from Containerfile.backend..."
+	@sed -i.bak '/Install sqlite3/,+6d' $(PROJECT_DIR)/Containerfile.backend
+	@echo "Removing better-sqlite3 from backend package.json..."
+	@cd $(PROJECT_DIR)/packages/backend && \
+	npm uninstall better-sqlite3 || true
+	@echo "Cleaning backup file..."
+	@rm -f $(PROJECT_DIR)/Containerfile.backend.bak
+	@echo "Done."
+
 ## Usage: make init-backstage PROJECT_NAME=my-app
-.PHONY: init-backstage remove-frontend-from-backend remove-better-sqlite3
+.PHONY: init-backstage remove-frontend-from-backend
 init-backstage:
 ifndef PROJECT_NAME
 	$(error PROJECT_NAME is not set. Usage: make init-backstage PROJECT_NAME=your-app)

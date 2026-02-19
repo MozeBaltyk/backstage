@@ -12,18 +12,26 @@ backstage:
     successThreshold: 1
     timeoutSeconds: 2
 
-  # kubectl create secret generic backstage-secrets --from-env-file=backstage/.env -n backstage
-  # extraEnvVarsSecrets: 
-  #   - backstage-secrets
+  # Allow to load app-config.<BACKSTAGE_ENV>.yaml.
+  extraEnvVars:
+    - name: BACKSTAGE_ENV
+      value: k3d
 
   # Create an backstage-app-config config-maps
   appConfig:
     app:
-      baseUrl: backstage-frontend.backstage.svc
+      title: Backstage
+      baseUrl: http://backstage.localhost:8080
     backend:
-      baseUrl: backstage.backstage.svc
-      cors: 
-        origin: backstage.backstage.svc
+      baseUrl: http://backstage.localhost:8080
+    auth:
+      providers:
+        guest:
+          dangerouslyAllowOutsideDevelopment: 'true'
+
+  # kubectl create secret generic backstage-secrets --from-env-file=vanilla/.env -n backstage
+  # extraEnvVarsSecrets: 
+  #   - backstage-secrets
 
   podSecurityContext:
     runAsUser: 65532
@@ -78,10 +86,35 @@ extraDeploy:
           securityContext:
             runAsUser: 65532
             runAsNonRoot: true
+
+          # use same configmaps than backend
+          volumes:
+            - name: app-config-volume
+              configMap:
+                name: backstage-app-config
+                items:
+                  - key: app-config.yaml
+                    path: app-config.yaml
+
           containers:
             - name: frontend
               image: localhost:5000/backstage-frontend:local
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
+              # env:
+              #   - name: APP_CONFIG_app_title
+              #     value: Backstage
+              #   - name: APP_CONFIG_app_baseUrl
+              #     value: https://backstage.io
+              #   - name: APP_CONFIG_backend_baseUrl
+              #     value: https://backstage.io
+
+              # use same configmaps than backend
+              volumeMounts:
+                - name: app-config-volume
+                  mountPath: /etc/app-config.yaml
+                  readOnly: true
+                  subPath: app-config.yaml  # optional: mount as a file
+
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
@@ -121,8 +154,10 @@ extraDeploy:
     metadata:
       name: backstage-ingress
       annotations:
-        kubernetes.io/ingress.class: traefik
+        traefik.ingress.kubernetes.io/router.entrypoints: web
+        traefik.ingress.kubernetes.io/router.tls: "false"
     spec:
+      ingressClassName: traefik
       rules:
         - host: backstage.localhost
           http:
@@ -131,7 +166,7 @@ extraDeploy:
                 pathType: Prefix
                 backend:
                   service:
-                    name: release-name-backstage
+                    name: backstage
                     port:
                       number: 7007
 

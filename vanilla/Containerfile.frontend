@@ -34,7 +34,7 @@
 #       docker build -t backstage-frontend -f Dockerfile.dockerbuild .
 
 
-FROM --platform=$BUILDPLATFORM node:24-alpine AS build
+FROM node:24-alpine AS build
 RUN mkdir /app
 COPY . /app
 WORKDIR /app
@@ -45,7 +45,7 @@ RUN yarn workspace app build
 FROM nginxinc/nginx-unprivileged:alpine-slim
 ARG UID=101
 USER root
-RUN apk add --no-cache jq && rm -rf /var/lib/apk/lists/*
+RUN apk add --no-cache jq yq && rm -rf /var/lib/apk/lists/*
 COPY --from=build /app/packages/app/dist /usr/share/nginx/html
 RUN chown -R $UID:0 /usr/share/nginx/html/
 RUN chmod -R g+w /usr/share/nginx/html/
