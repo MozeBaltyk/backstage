@@ -98,6 +98,4 @@ k3d-uninstall-backstage:
 ## k3d - Test the deployment by port-forwarding the frontend service and curling it.
 .PHONY: k3d-test-deployment
 k3d-test-deployment:
-	kubectl port-forward service/frontend 8080:8080 &
-	sleep 5
-	curl http://localhost:8080
+	curl -fsS -H "Host: backstage2.localhost" http://localhost:8080 > /dev/null

@@ -1,11 +1,13 @@
 # Backstage Vanilla
 
 A Backstage Vanilla with:
-[X] Split frontend and backend 
-[X] Hardened images and unprivileged containers 
-[X] Relatively small images (backend ~700MB;frontend ~200MB)
-[ ] Pipeline to Build image and test images        
-[ ] Renovate to auto-update and track security alerts      
+* [X] Split frontend and backend 
+* [X] Hardened images and unprivileged containers 
+* [X] Relatively small images (backend ~700MB;frontend ~200MB)
+* [X] Kubernetes deployment with helm
+* [ ] Kubernetes integration
+* [ ] Pipeline to Build image and test images        
+* [ ] Renovate to auto-update and track security alerts      
 
 For the moment, it's a Vanilla backstage which can be use to test new templates and plugins, Test upgrade on backstage or plugins... 
 
@@ -106,7 +108,8 @@ link to front: `http://backstage.localhost:8080`
 
 * From Vanilla directory: 
   - `yarn backstage-cli versions:bump` - Manual Backstage upgrade
-  - `yarn install` - Then install dependencies
+      -  if plugins were installed: `yarn backstage-cli versions:bump --pattern '@{backstage,headlamp-k8s}/*'`
+  - `yarn cache clean && yarn install` - Then install dependencies
   - Check backstage doc if something need to be adapted in the code with:  
       * [upgrade-helper](https://backstage.github.io/upgrade-helper/?from=1.46.0&to=1.47.0&yarnPlugin=1)
   
@@ -141,12 +144,11 @@ catalog:
 * Install backstage plugins
 
 ```bash
-yarn --cwd packages/app add @backstage/plugin-home
-yarn --cwd packages/app add @backstage-community/plugin-tech-radar
-yarn --cwd packages/backend add @backstage/plugin-auth-backend-module-guest-provider
+# Kubernetes plugins
 yarn --cwd packages/app add @backstage/plugin-kubernetes
 yarn --cwd packages/backend add @backstage/plugin-kubernetes-backend
-yarn --cwd packages/app add @backstage/plugin-kubernetes-cluster/alpha
+
+# Headlamp plugins
 yarn --cwd packages/backend add @headlamp-k8s/backstage-plugin-headlamp-backend
 yarn --cwd packages/app add @headlamp-k8s/backstage-plugin-headlamp
 ```

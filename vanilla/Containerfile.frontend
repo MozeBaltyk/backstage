@@ -38,7 +38,6 @@ FROM node:24-alpine AS build
 RUN mkdir /app
 COPY . /app
 WORKDIR /app
-RUN apk add --no-cache git
 RUN yarn install
 RUN yarn workspace app build
 
