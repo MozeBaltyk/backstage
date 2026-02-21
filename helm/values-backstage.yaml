@@ -28,6 +28,10 @@ backstage:
       providers:
         guest:
           dangerouslyAllowOutsideDevelopment: 'true'
+    catalog:
+      locations:
+       - type: url
+         target: https://github.com/MozeBaltyk/backstage/blob/master/common/entities/all.yaml
 
   # kubectl create secret generic backstage-secrets --from-env-file=vanilla/.env -n backstage
   # extraEnvVarsSecrets: 

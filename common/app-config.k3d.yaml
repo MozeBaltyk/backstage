@@ -11,6 +11,11 @@ kubernetes:
           authProvider: 'serviceAccount'
           skipTLSVerify: true
           skipMetricsLookup: true
+          dashboardApp: 'headlamp'
+          dashboardParameters:
+            internal: true
+            headlampRoute: '/headlamp' # Optional, defaults to '/headlamp'
+            clusterName: 'my-cluster' # Optional, defaults to 'default'
 
 # see https://backstage.io/docs/permissions/getting-started for more on the permission framework
 permission:

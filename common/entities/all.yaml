@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: Include Entities
+  description: A collection of Backstage entities
+spec:
+  targets:
+    - ./k8s-entities.yaml
