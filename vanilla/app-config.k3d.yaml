@@ -18,6 +18,6 @@ kubernetes:
             clusterName: 'my-cluster' # Optional, defaults to 'default'
 
 # see https://backstage.io/docs/permissions/getting-started for more on the permission framework
-permission:
-  # setting this to `false` will disable permissions
-  enabled: false
+# permission:
+#   # setting this to `false` will disable permissions
+#   enabled: false

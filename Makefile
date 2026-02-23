@@ -70,6 +70,26 @@ build-frontend-backend-images:
 		echo "Local registry not available. Skipping push."; \
 	fi
 
+## Cleanup local images
+.PHONY: cleanup-frontend-backend-images
+cleanup-frontend-backend-images:
+	@repo="backstage-frontend"; tag="local"; \
+	digest=$(curl -sI \
+	  -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+	  http://localhost:5000/v2/$repo/manifests/$tag \
+	  | awk -F': ' '/Docker-Content-Digest/ {print $2}' | tr -d '\r'); \
+	echo "Deleting $digest"; \
+	curl -v -X DELETE http://localhost:5000/v2/$repo/manifests/$digest
+	@repo="backstage-backend"; tag="local"; \
+	digest=$(curl -sI \
+	  -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+	  http://localhost:5000/v2/$repo/manifests/$tag \
+	  | awk -F': ' '/Docker-Content-Digest/ {print $2}' | tr -d '\r'); \
+	echo "Deleting $digest"; \
+	curl -v -X DELETE http://localhost:5000/v2/$repo/manifests/$digest
+	@podman exec -it k3d-mycluster-registry registry garbage-collect /etc/docker/registry/config.yml
+	@podman image rm localhost/backend:local localhost/frontend:local localhost:5000/backstage-frontend:local localhost:5000/backstage-backend:local
+
 ## k3d - Create cluster.
 .PHONY: k3d-create-cluster
 k3d-create-cluster:

@@ -12,30 +12,65 @@ backstage:
     successThreshold: 1
     timeoutSeconds: 2
 
-  # Allow to load app-config.<BACKSTAGE_ENV>.yaml.
+  # Allow to declare extra env vars on pod
   extraEnvVars:
     - name: BACKSTAGE_ENV
       value: k3d
+    - name: K8S_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: k3d-admin-token
+          key: token
 
-  # Create an backstage-app-config config-maps
+  args:
+    - "--config"
+    - "app-config.yaml"
+    - "--config"
+    - "app-config.production.yaml"
+
+  # Create an backstage-app-config config-maps (used by the frontend as well)
   appConfig:
     app:
       title: Backstage
       baseUrl: http://backstage.localhost:8080
     backend:
       baseUrl: http://backstage.localhost:8080
+      listen:
+        port: 7007
+        host: 0.0.0.0
+      database:
+        client: pg
+        connection:
+          host: ${POSTGRES_HOST}
+          port: ${POSTGRES_PORT}
+          user: ${POSTGRES_USER}
+          password: ${POSTGRES_PASSWORD}
     auth:
       providers:
         guest:
           dangerouslyAllowOutsideDevelopment: 'true'
     catalog:
       locations:
-       - type: url
-         target: https://github.com/MozeBaltyk/backstage/blob/master/common/entities/all.yaml
-
-  # kubectl create secret generic backstage-secrets --from-env-file=vanilla/.env -n backstage
-  # extraEnvVarsSecrets: 
-  #   - backstage-secrets
+        - type: url
+          target: https://github.com/MozeBaltyk/backstage/blob/master/common/entities/guest.yaml
+          rules:
+            - allow: [User, Group]
+        - type: url
+          target: https://github.com/MozeBaltyk/backstage/blob/master/common/entities/k8s-entities.yaml
+          rules:
+            - allow: [Component]
+    kubernetes:
+      serviceLocatorMethod:
+        type: 'multiTenant'
+      clusterLocatorMethods:
+        - type: 'config'
+          clusters:
+            - url: https://kubernetes.default.svc
+              name: k3d-mycluster
+              authProvider: 'serviceAccount'
+              serviceAccountToken: ${K8S_TOKEN}
+              skipTLSVerify: true
+              skipMetricsLookup: true
 
   podSecurityContext:
     runAsUser: 65532
@@ -197,3 +232,32 @@ extraDeploy:
         - name: http-frontend
           port: 3000
           targetPort: 8080
+
+  # -----------------------------
+  # Token Secret for K3D Cluster Access
+  # -----------------------------
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: k3d-admin
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: svca-admin
+    roleRef:
+      kind: ClusterRole
+      name: cluster-admin
+      apiGroup: rbac.authorization.k8s.io
+    subjects:
+      - kind: ServiceAccount
+        name: k3d-admin
+        namespace: backstage
+
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: k3d-admin-token
+      annotations:
+        kubernetes.io/service-account.name: k3d-admin
+    type: kubernetes.io/service-account-token
