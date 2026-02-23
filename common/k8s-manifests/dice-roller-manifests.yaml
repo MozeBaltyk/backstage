@@ -41,7 +41,7 @@ metadata:
   labels:
     'backstage.io/kubernetes-id': dice-roller
 spec:
-  schedule: '*/1 * * * *'
+  schedule: '*/5 * * * *'
   jobTemplate:
     metadata:
       labels:

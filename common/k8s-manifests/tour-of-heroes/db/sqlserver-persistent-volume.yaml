@@ -5,8 +5,7 @@ metadata:
   labels:
     'backstage.io/kubernetes-id': tour-of-heroes
   namespace: tour-of-heroes
-spec:  
-  storageClassName: managed-csi  
+spec:
   accessModes:
     - ReadWriteOnce
   resources:

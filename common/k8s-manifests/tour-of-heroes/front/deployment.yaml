@@ -7,7 +7,7 @@ metadata:
   name: tour-of-heroes-web
   namespace: tour-of-heroes
 spec:
-  replicas: 2
+  replicas: 1
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -20,9 +20,9 @@ spec:
       containers:
       - image: ghcr.io/0gis0/tour-of-heroes-angular:main
         name: tour-of-heroes-web
-        env:
-          - name: API_URL
-            value: http://20.23.122.26/api/hero
+        # env:
+        #   - name: API_URL
+        #     value: http://20.23.122.26/api/hero
         ports:
         - containerPort: 5000
           name: web
