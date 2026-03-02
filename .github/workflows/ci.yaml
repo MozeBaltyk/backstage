@@ -35,7 +35,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: vanilla
-          file: Containerfile.backend
+          file:  vanilla/Containerfile.backend
           push: false
           load: true
           tags: backstage-backend:${{ github.sha }}
@@ -46,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: vanilla
-          file: Containerfile.frontend
+          file:  vanilla/Containerfile.frontend
           push: false
           load: true
           tags: backstage-frontend:${{ github.sha }}
