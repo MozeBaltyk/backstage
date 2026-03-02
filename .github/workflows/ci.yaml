@@ -34,7 +34,7 @@ jobs:
       - name: Build Backend
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.CONTEXT_DIR }}
+          context: vanilla
           file: Containerfile.backend
           push: false
           load: true
@@ -45,7 +45,7 @@ jobs:
       - name: Build Frontend
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.CONTEXT_DIR }}
+          context: vanilla
           file: Containerfile.frontend
           push: false
           load: true
