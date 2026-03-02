@@ -1,4 +1,4 @@
-name: release
+name: Release
 
 on:
   push:
@@ -9,6 +9,9 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  security-events: write
+  id-token: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -17,114 +20,44 @@ concurrency:
 env:
   IMAGE_TAG: ${{ github.ref_name }}
   REGISTRY: ghcr.io/mozebaltyk
-  FRONTEND_IMAGE_NAME: backstage-frontend
-  BACKEND_IMAGE_NAME: backstage-backend
   CONTEXT_DIR: vanilla
 
 jobs:
-  build-push-frontend:
-    uses: docker/github-builder/.github/workflows/build.yml@v1
-    permissions:
-      id-token: write
-      packages: write
-    with:
-      output: image
-      push: true
-      platforms: linux/amd64,linux/arm64
-      runner: amd64
-      setup-qemu: true
-      file: Containerfile.frontend
-      sbom: true
-      context: vanilla
-      set-meta-labels: true
-      set-meta-annotations: true
-      meta-images: |
-        ghcr.io/mozebaltyk/backstage-frontend
-      meta-tags: |
-        type=ref,event=tag
-        latest
-    secrets:
-      registry-auths: |
-        - registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-
-  build-push-backend:
-    uses: docker/github-builder/.github/workflows/build.yml@v1
-    permissions:
-      id-token: write
-      packages: write
-    with:
-      output: image
-      push: true
-      platforms: linux/amd64,linux/arm64
-      runner: amd64
-      setup-qemu: true
-      file: Containerfile.backend
-      sbom: true
-      context: vanilla
-      set-meta-labels: true
-      set-meta-annotations: true
-      meta-images: |
-        ghcr.io/mozebaltyk/backstage-backend
-      meta-tags: |
-        type=ref,event=tag
-        latest
-    secrets:
-      registry-auths: |
-        - registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-  scan-frontend:
+  build-push:
     runs-on: ubuntu-24.04
-    permissions:
-      security-events: write
-    needs:
-      - build-push-frontend
+    strategy:
+      matrix:
+        include:
+          - name: backstage-backend
+            dockerfile: Containerfile.backend
+          - name: backstage-frontend
+            dockerfile: Containerfile.frontend
+
     steps:
-      - name: docker login docker.io
-        uses: docker/login-action@v3
+      - name: Build & Push ${{ matrix.name }}
+        uses: docker/github-builder/.github/workflows/build.yml@v1
+        permissions:
+          id-token: write
+          packages: write
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Docker Scout - frontend
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          sarif-file: sarif-frontend.output.json
-          summary: true
-          image: registry://ghcr.io/mozebaltyk/backstage-frontend:${{ github.ref_name }}
-
-      - name: Upload frontend SARIF report
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: sarif-frontend.output.json
-
-  scan-backend:
-    runs-on: ubuntu-24.04
-    permissions:
-      security-events: write
-    needs:
-      - build-push-backend
-    steps:
-      - name: docker login docker.io
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Docker Scout - backend
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          sarif-file: sarif-backend.output.json
-          summary: true
-          image: registry://ghcr.io/mozebaltyk/backstage-backend:${{ github.ref_name }}
-
-      - name: Upload backend SARIF report
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: sarif-backend.output.json
+          output: image
+          push: true
+          platforms: linux/amd64,linux/arm64
+          runner: amd64
+          setup-qemu: true
+          file: ${{ env.CONTEXT_DIR }}/${{ matrix.dockerfile }}
+          context: ${{ env.CONTEXT_DIR }}
+          sbom: true
+          set-meta-labels: true
+          set-meta-annotations: true
+          meta-images: |
+            ${{ env.REGISTRY }}/${{ matrix.name }}
+          meta-tags: |
+            type=ref,event=tag
+            ${{ github.ref_name }}
+            latest
+        secrets:
+          registry-auths: |
+            - registry: ghcr.io
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}

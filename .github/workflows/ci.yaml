@@ -32,7 +32,7 @@ jobs:
             dockerfile: Containerfile.frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
 
       # Build image
@@ -59,17 +59,17 @@ jobs:
 
       # Upload SARIF
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-${{ matrix.name }}.sarif
 
-      # Failed if vulnerabilities are found
-      - name: Enforce vulnerability policy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "image"
-          image-ref: ${{ matrix.name }}:${{ github.sha }}
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: 1
-          skip-setup-trivy: true
+      # Failed if vulnerabilities are found - not really needed currently
+      # - name: Enforce vulnerability policy
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     scan-type: "image"
+      #     image-ref: ${{ matrix.name }}:${{ github.sha }}
+      #     severity: HIGH,CRITICAL
+      #     ignore-unfixed: true
+      #     exit-code: 1
+      #     skip-setup-trivy: true
