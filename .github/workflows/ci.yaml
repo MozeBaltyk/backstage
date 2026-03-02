@@ -22,8 +22,7 @@ env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 jobs:
-
-  build:
+  build-scan:
     runs-on: ubuntu-24.04
 
     steps:
@@ -31,142 +30,76 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Build Backend
+      # Build backend
+      - name: Build backend
         uses: docker/build-push-action@v6
         with:
-          context: vanilla
-          file:  vanilla/Containerfile.backend
-          push: false
+          context: ${{ env.CONTEXT_DIR }}
+          file: ${{ env.CONTEXT_DIR }}/Containerfile.backend
           load: true
-          tags: backstage-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          push: false
+          tags: ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Build Frontend
+      # Build frontend
+      - name: Build frontend
         uses: docker/build-push-action@v6
         with:
-          context: vanilla
-          file:  vanilla/Containerfile.frontend
-          push: false
+          context: ${{ env.CONTEXT_DIR }}
+          file: ${{ env.CONTEXT_DIR }}/Containerfile.frontend
           load: true
-          tags: backstage-frontend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          push: false
+          tags: ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
-  scan:
-    runs-on: ubuntu-24.04
-    needs: build
-
-    steps:
-      # Install Trivy CLI
+      # Install Trivy
       - uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: fs
           scan-ref: .
         continue-on-error: true
 
-      - name: Scan backend (JSON)
+      # Scan backend
+      - name: Scan backend
         run: |
           trivy image --format json \
             -o backend.json \
             --severity HIGH,CRITICAL \
-            backstage-backend:${{ github.sha }}
+            ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          trivy image --format sarif  \
+            -o backend.sarif \
+            --severity HIGH,CRITICAL \
+            ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Scan frontend (JSON)
+      # Scan frontend
+      - name: Scan frontend
         run: |
           trivy image --format json \
             -o frontend.json \
             --severity HIGH,CRITICAL \
-            backstage-frontend:${{ github.sha }}
+            ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          trivy image --format sarif  \
+            -o frontend.sarif \
+            --severity HIGH,CRITICAL \
+            ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Generate SBOM (CycloneDX)
-        run: |
-          trivy image --format cyclonedx \
-            -o backend-sbom.json backstage-backend:${{ github.sha }}
-          trivy image --format cyclonedx \
-            -o frontend-sbom.json backstage-frontend:${{ github.sha }}
-
-      # 🔎 Compare PR vs main (only on PR)
-      - name: Compare against main
-        if: github.event_name == 'pull_request'
-        run: |
-          git fetch origin main
-          git checkout origin/main
-
-          docker build -t backstage-backend:main -f Containerfile.backend ${{ env.CONTEXT_DIR }}
-          docker build -t backstage-frontend:main -f Containerfile.frontend ${{ env.CONTEXT_DIR }}
-
-          trivy image --format json -o backend-main.json backstage-backend:main
-          trivy image --format json -o frontend-main.json backstage-frontend:main
-
-      # 📝 Create PR summary comment
-      - name: Create vulnerability summary
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "## 🔐 Trivy Vulnerability Summary" > summary.md
-          echo "" >> summary.md
-          echo "### Backend" >> summary.md
-          jq '.Results[].Vulnerabilities[] | select(.Severity=="HIGH" or .Severity=="CRITICAL") | "- \(.Severity) - \(.PkgName) - \(.VulnerabilityID)"' backend.json >> summary.md
-          echo "" >> summary.md
-          echo "### Frontend" >> summary.md
-          jq '.Results[].Vulnerabilities[] | select(.Severity=="HIGH" or .Severity=="CRITICAL") | "- \(.Severity) - \(.PkgName) - \(.VulnerabilityID)"' frontend.json >> summary.md
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+      # Upload SARIF results to GitHub Security tab
+      - name: Upload SARIF backend
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          script: |
-            const fs = require('fs');
-            const body = fs.readFileSync('summary.md', 'utf8');
-            github.rest.issues.createComment({
-              ...context.repo,
-              issue_number: context.issue.number,
-              body
-            });
+          sarif_file: backend.sarif
 
-      # 🚨 Fail if HIGH/CRITICAL found
+      - name: Upload SARIF frontend
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: frontend.sarif
+
+      # Fail if any HIGH/CRITICAL found (both images)
       - name: Fail on vulnerabilities
         run: |
-          HIGH=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH" or .Severity=="CRITICAL")] | length' backend.json)
-          if [ "$HIGH" -gt 0 ]; then
+          BACK=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH" or .Severity=="CRITICAL")] | length' backend.json)
+          FRONT=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH" or .Severity=="CRITICAL")] | length' frontend.json)
+
+          if [ "$BACK" -gt 0 ] || [ "$FRONT" -gt 0 ]; then
             echo "High or Critical vulnerabilities detected"
             exit 1
           fi
-
-  push:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-24.04
-    needs: scan
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/setup-buildx-action@v3
-
-      - name: Build and Push Backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ env.CONTEXT_DIR }}
-          file: Containerfile.backend
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
-
-      - name: Build and Push Frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ env.CONTEXT_DIR }}
-          file: Containerfile.frontend
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
-
+      
