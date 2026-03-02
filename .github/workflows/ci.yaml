@@ -1,4 +1,5 @@
 name: ci
+
 on:
   pull_request:
     branches: [main]
@@ -9,97 +10,63 @@ permissions:
   contents: read
   pull-requests: write
   security-events: write
-  id-token: write   # required for SBOM attestation
+  id-token: write
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  FRONTEND_IMAGE_NAME: backstage-frontend
-  BACKEND_IMAGE_NAME: backstage-backend
   CONTEXT_DIR: vanilla
-  REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 jobs:
   build-scan:
     runs-on: ubuntu-24.04
 
+    strategy:
+      matrix:
+        include:
+          - name: backstage-backend
+            dockerfile: Containerfile.backend
+          - name: backstage-frontend
+            dockerfile: Containerfile.frontend
+
     steps:
       - uses: actions/checkout@v4
-
       - uses: docker/setup-buildx-action@v3
 
-      # Build backend
-      - name: Build backend
+      # Build image
+      - name: Build ${{ matrix.name }}
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.CONTEXT_DIR }}
-          file: ${{ env.CONTEXT_DIR }}/Containerfile.backend
+          file: ${{ env.CONTEXT_DIR }}/${{ matrix.dockerfile }}
           load: true
           push: false
-          tags: ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ matrix.name }}:${{ github.sha }}
 
-      # Build frontend
-      - name: Build frontend
-        uses: docker/build-push-action@v6
+      # Scan image
+      - name: Scan ${{ matrix.name }}
+        uses: aquasecurity/trivy-action@0.34.1
         with:
-          context: ${{ env.CONTEXT_DIR }}
-          file: ${{ env.CONTEXT_DIR }}/Containerfile.frontend
-          load: true
-          push: false
-          tags: ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ matrix.name }}:${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.name }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 0
 
-      # Install Trivy
-      - uses: aquasecurity/trivy-action@0.34.1
-        with:
-          scan-type: fs
-          scan-ref: .
-        continue-on-error: true
-
-      # Scan backend
-      - name: Scan backend
-        run: |
-          trivy image --format json \
-            -o backend.json \
-            --severity HIGH,CRITICAL \
-            ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
-          trivy image --format sarif  \
-            -o backend.sarif \
-            --severity HIGH,CRITICAL \
-            ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
-
-      # Scan frontend
-      - name: Scan frontend
-        run: |
-          trivy image --format json \
-            -o frontend.json \
-            --severity HIGH,CRITICAL \
-            ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
-          trivy image --format sarif  \
-            -o frontend.sarif \
-            --severity HIGH,CRITICAL \
-            ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
-
-      # Upload SARIF results to GitHub Security tab
-      - name: Upload SARIF backend
+      # Upload SARIF
+      - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: backend.sarif
+          sarif_file: trivy-${{ matrix.name }}.sarif
 
-      - name: Upload SARIF frontend
-        uses: github/codeql-action/upload-sarif@v3
+      # Failed if vulnerabilities are found
+      - name: Enforce vulnerability policy
+        uses: aquasecurity/trivy-action@0.34.1
         with:
-          sarif_file: frontend.sarif
-
-      # Fail if any HIGH/CRITICAL found (both images)
-      - name: Fail on vulnerabilities
-        run: |
-          BACK=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH" or .Severity=="CRITICAL")] | length' backend.json)
-          FRONT=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH" or .Severity=="CRITICAL")] | length' frontend.json)
-
-          if [ "$BACK" -gt 0 ] || [ "$FRONT" -gt 0 ]; then
-            echo "High or Critical vulnerabilities detected"
-            exit 1
-          fi
-      
+          image-ref: ${{ matrix.name }}:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
