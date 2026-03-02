@@ -45,15 +45,9 @@ jobs:
           push: false
           tags: ${{ matrix.name }}:${{ github.sha }}
 
-      - name: Manual Trivy Setup
-        uses: aquasecurity/setup-trivy@v0.2.0
-        with:
-          cache: true
-          version: v0.69.2
-
       # Scan image
       - name: Scan ${{ matrix.name }}
-        uses: aquasecurity/trivy-action@0.34.0
+        uses: aquasecurity/trivy-action@0.34.2
         with:
           scan-type: "image"
           image-ref: ${{ matrix.name }}:${{ github.sha }}
@@ -71,7 +65,7 @@ jobs:
 
       # Failed if vulnerabilities are found
       - name: Enforce vulnerability policy
-        uses: aquasecurity/trivy-action@v0.34.0
+        uses: aquasecurity/trivy-action@v0.34.2
         with:
           scan-type: "image"
           image-ref: ${{ matrix.name }}:${{ github.sha }}
