@@ -49,6 +49,7 @@ jobs:
       - name: Scan ${{ matrix.name }}
         uses: aquasecurity/trivy-action@0.31.0
         with:
+          scan-type: "image"
           image-ref: ${{ matrix.name }}:${{ github.sha }}
           format: sarif
           output: trivy-${{ matrix.name }}.sarif
@@ -66,6 +67,7 @@ jobs:
       - name: Enforce vulnerability policy
         uses: aquasecurity/trivy-action@0.31.0
         with:
+          scan-type: "image"
           image-ref: ${{ matrix.name }}:${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
