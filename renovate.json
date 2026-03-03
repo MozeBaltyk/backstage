@@ -7,13 +7,18 @@
   "packageRules": [
     {
       "matchManagers": ["npm"],
-      "groupName": "ci",
+      "groupName": "backstage deps",
       "matchPackagePatterns": ["*"]
     },
     {
-      "matchManagers": ["dockerfile"],
-      "groupName": "ci",
+      "matchManagers": ["yarn"],
+      "groupName": "backstage deps",
       "matchPackagePatterns": ["*"]
+    },
+    {
+      "matchManagers": ["podman"],
+      "matchPaths": ["**/Containerfile*"],
+      "groupName": "ci"
     },
     {  
       "description": "https://github.com/backstage/backstage/issues/28080",
@@ -29,7 +34,7 @@
       "allowedVersions": "<19"
     },
     {
-      "matchManagers": ["dockerfile"],
+      "matchManagers": ["podman"],
       "matchPackageNames": ["node"],
       "matchUpdateTypes": ["major"],
       "enabled": false
