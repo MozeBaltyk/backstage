@@ -34,9 +34,6 @@ jobs:
       # Build image
       - name: Build & Push ${{ matrix.name }}
         uses: docker/github-builder/.github/workflows/build.yml@v1
-        permissions:
-          id-token: write
-          packages: write
         with:
           output: image
           push: true
