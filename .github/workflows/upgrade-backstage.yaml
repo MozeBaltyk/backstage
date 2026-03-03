@@ -20,12 +20,13 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: vanilla/yarn.lock
       - name: yarn backstage-cli versions:bump
+        working-directory: vanilla
         run: |
-          echo "OLD_BACKSTAGE_VERSION=$(cat backstage.json | jq -r .version)" >> ${{ github.env }}
+          echo "OLD_BACKSTAGE_VERSION=$(cat backstage.json | jq -r .version)" >> $GITHUB_ENV
           export YARN_ENABLE_IMMUTABLE_INSTALLS=false
           yarn install
           yarn backstage-cli versions:bump
-          echo "NEW_BACKSTAGE_VERSION=$(cat backstage.json | jq -r .version)" >> ${{ github.env }}
+          echo "NEW_BACKSTAGE_VERSION=$(cat backstage.json | jq -r .version)" >> $GITHUB_ENV
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
@@ -42,4 +43,4 @@ jobs:
             - [ ] Submit PR review
           branch: upgrade-backstage
           delete-branch: true
-          draft: always-true # Because of: https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs.
+          draft: true # Because of: https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs.
