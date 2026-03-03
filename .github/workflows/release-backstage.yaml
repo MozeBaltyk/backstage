@@ -51,11 +51,6 @@ jobs:
             type=ref,event=tag
             ${{ github.ref_name }}
             latest
-        secrets:
-          registry-auths: |
-            - registry: ghcr.io
-              username: ${{ github.actor }}
-              password: ${{ secrets.GITHUB_TOKEN }}
 
       # Scan image
       - name: Scan ${{ matrix.name }}
