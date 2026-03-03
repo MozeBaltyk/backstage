@@ -10,7 +10,6 @@ permissions:
   contents: read
   pull-requests: write
   security-events: write
-  id-token: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -44,6 +43,8 @@ jobs:
           load: true
           push: false
           tags: ${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # Scan image
       - name: Scan ${{ matrix.name }}
@@ -51,17 +52,37 @@ jobs:
         with:
           scan-type: "image"
           image-ref: ${{ matrix.name }}:${{ github.sha }}
-          format: sarif
-          output: trivy-${{ matrix.name }}.sarif
+          format: json
+          output: trivy-${{ matrix.name }}.json
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: 0
 
-      # Upload SARIF
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
+      # Generate PR comment with scan results
+      - name: Generate PR comment
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## 🔐 Trivy Scan Results - ${{ matrix.name }}" > comment.md
+          echo "" >> comment.md
+
+          COUNT=$(jq '[.Results[].Vulnerabilities[]?] | length' trivy-${{ matrix.name }}.json)
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "✅ No HIGH or CRITICAL vulnerabilities found." >> comment.md
+          else
+            echo "❌ Found $COUNT HIGH/CRITICAL vulnerabilities:" >> comment.md
+            echo "" >> comment.md
+            jq -r '.Results[].Vulnerabilities[]? | 
+              "- **\(.Severity)** \(.VulnerabilityID) - \(.PkgName) (\(.InstalledVersion))"' \
+              trivy-${{ matrix.name }}.json >> comment.md
+          fi
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          sarif_file: trivy-${{ matrix.name }}.sarif
+          path: comment.md
+          header: ${{ matrix.name }}
 
       # Failed if vulnerabilities are found - not really needed currently
       # - name: Enforce vulnerability policy
