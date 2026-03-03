@@ -1,15 +1,11 @@
 name: Release Backstage
 on:
-  push:
-    tags:
-      - "v*"
   release:
     types: [published]
 
 permissions:
   contents: read
-  pull-requests: write
-  security-events: write
+  packages: write
   id-token: write
 
 concurrency:
@@ -33,6 +29,8 @@ jobs:
             dockerfile: Containerfile.frontend
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Build & Push ${{ matrix.name }}
         uses: docker/github-builder/.github/workflows/build.yml@v1
         permissions:
