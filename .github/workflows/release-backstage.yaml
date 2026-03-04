@@ -18,7 +18,7 @@ env:
   CONTEXT_DIR: vanilla
 
 jobs:
-  build-push:
+  build-and-push:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -29,14 +29,15 @@ jobs:
             dockerfile: Containerfile.frontend
 
     steps:
-      - uses: actions/checkout@v6
-
       # Build image
       - name: Build & Push ${{ matrix.name }}
         uses: docker/github-builder/.github/workflows/build.yml@v1
+        permissions:
+          contents: read # to fetch the repository content
+          id-token: write # for signing attestation(s) with GitHub OIDC Token        
         with:
           output: image
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64,linux/arm64
           runner: amd64
           setup-qemu: true
@@ -48,11 +49,22 @@ jobs:
           meta-images: |
             ${{ env.REGISTRY }}/${{ matrix.name }}
           meta-tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
             type=ref,event=tag
             ${{ github.ref_name }}
             latest
+          secrets:
+            registry-auths: |
+              - registry: ghcr.io
+                username: ${{ github.actor }}
+                password: ${{ secrets.GITHUB_TOKEN }}          
 
-      # Scan image
+  Trivy-Scan:
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    steps:
       - name: Scan ${{ matrix.name }}
         uses: aquasecurity/trivy-action@master
         with:
