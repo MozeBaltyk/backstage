@@ -34,6 +34,10 @@
       "allowedVersions": "<19"
     },
     {
+      "matchPackageNames": ["@types/react"],
+      "allowedVersions": "<19"
+    },
+    {
       "matchManagers": ["podman"],
       "matchPackageNames": ["node"],
       "matchUpdateTypes": ["major"],
