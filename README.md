@@ -168,12 +168,26 @@ curl localhost:7007/plugin-name/health
 
 ## Pipeline
 
-Renovate is used to track dependencies and opens PR:
-  - [Renovate Dashboard](https://developer.mend.io/github/MozeBaltyk/backstage)
+### Dependency Management
 
-Github Workflows:
-  - the CI build frontend/backend images and display the CVE on the PR.
-  - Release Build and deliver the images
+- Renovate monitors dependencies and automatically opens PRs for updates.
+- [Renovate Dashboard](https://developer.mend.io/github/MozeBaltyk/backstage)
+ shows all pending updates, grouped by type (e.g., Backstage packages, React ecosystem, CI actions).
+
+### GitHub Workflows
+
+1. CI Pipeline (ci.yaml)
+    - Builds frontend and backend container images.
+    - Scans images with Trivy for CVEs.
+    - Displays scan results directly in PR comments for quick review.
+2. Backstage Version Upgrade (upgrade-backstage.yaml)
+    - Monitors for new Backstage releases.
+    - Automatically bumps version and creates a draft PR.
+    - Triggers the CI pipeline to test the upgrade before merging.
+3. Release Pipeline (release-backstage.yaml)
+   - Builds and pushes container images to GitHub Container Registry (GHCR).
+   - Adds SBOMs and provenance attestations for supply-chain security.
+   - Only triggers on published releases to avoid accidental builds.
 
 ## Sources and References
 
