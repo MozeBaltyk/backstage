@@ -13,11 +13,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_TAG: ${{ github.ref_name }}
   REGISTRY: ghcr.io/mozebaltyk
   CONTEXT_DIR: vanilla
+  IMAGE_TAG: ${{ github.ref_name }}
 
 jobs:
+  # Build Job
   build-and-push:
     runs-on: ubuntu-24.04
     strategy:
@@ -29,44 +30,51 @@ jobs:
             dockerfile: Containerfile.frontend
 
     steps:
-      # Build image
-      - name: Build & Push ${{ matrix.name }}
-        uses: docker/github-builder/.github/workflows/build.yml@v1
-        permissions:
-          contents: read # to fetch the repository content
-          id-token: write # for signing attestation(s) with GitHub OIDC Token        
-        with:
-          output: image
-          push: ${{ github.event_name != 'pull_request' }}
-          platforms: linux/amd64,linux/arm64
-          runner: amd64
-          setup-qemu: true
-          file: ${{ env.CONTEXT_DIR }}/${{ matrix.dockerfile }}
-          context: ${{ env.CONTEXT_DIR }}
-          sbom: true
-          set-meta-labels: true
-          set-meta-annotations: true
-          meta-images: |
-            ${{ env.REGISTRY }}/${{ matrix.name }}
-          meta-tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=ref,event=tag
-            ${{ github.ref_name }}
-            latest
-          secrets:
-            registry-auths: |
-              - registry: ghcr.io
-                username: ${{ github.actor }}
-                password: ${{ secrets.GITHUB_TOKEN }}          
+      - uses: actions/checkout@v4
 
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ matrix.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.CONTEXT_DIR }}
+          file: ${{ env.CONTEXT_DIR }}/${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          sbom: true
+          provenance: true
+
+  # Scan job
   Trivy-Scan:
     needs: build-and-push
     runs-on: ubuntu-24.04
     steps:
       - name: Scan ${{ matrix.name }}
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "image"
           image-ref: ${{ env.REGISTRY }}/${{ matrix.name }}:${{ github.ref_name }}

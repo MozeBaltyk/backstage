@@ -27,10 +27,14 @@ jobs:
           yarn install
           yarn backstage-cli versions:bump
           echo "NEW_BACKSTAGE_VERSION=$(cat backstage.json | jq -r .version)" >> $GITHUB_ENV
+          if [ "$OLD_BACKSTAGE_VERSION" = "$NEW_BACKSTAGE_VERSION" ]; then
+            echo "No upgrade needed"
+            exit 0
+          fi
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
           commit-message: Upgrade Backstage version from ${{ env.OLD_BACKSTAGE_VERSION }} to ${{ env.NEW_BACKSTAGE_VERSION }}
           title: Upgrade Backstage version from ${{ env.OLD_BACKSTAGE_VERSION }} to ${{ env.NEW_BACKSTAGE_VERSION }}
           body: |
