@@ -6,46 +6,44 @@
   "schedule": ["* 15-19 * * *"],
   "packageRules": [
     {
-      "matchManagers": ["npm"],
-      "groupName": "backstage deps",
-      "matchPackagePatterns": ["*"]
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "separateMajorMinor": true
     },
     {
-      "matchManagers": ["yarn"],
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["npm", "yarn"],
       "groupName": "backstage deps",
-      "matchPackagePatterns": ["*"]
+      "matchPackageNames": ["*"]
     },
     {
       "matchManagers": ["podman"],
-      "matchPaths": ["**/Containerfile*"],
+      "matchFileNames": ["**/Containerfile*"],
       "groupName": "ci"
     },
-    {  
-      "description": "https://github.com/backstage/backstage/issues/28080",
-      "matchPackageNames": ["react"],
-      "allowedVersions": "<19"
+    {
+      "description": "Backstage React compatibility (https://github.com/backstage/backstage/issues/28080)",
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "allowedVersions": "<19",
+      "groupName": "react ecosystem"
     },
     {
-      "matchPackageNames": ["react-dom"],
-      "allowedVersions": "<19"
-    },
-    {
-      "matchPackageNames": ["@types/react-dom"],
-      "allowedVersions": "<19"
-    },
-    {
-      "matchPackageNames": ["@types/react"],
-      "allowedVersions": "<19"
+      "description": "Group TypeScript ecosystem",
+      "matchPackageNames": [
+        "typescript",
+        "@types/node"
+      ],
+      "groupName": "typescript ecosystem"
     },
     {
       "matchManagers": ["podman"],
       "matchPackageNames": ["node"],
       "matchUpdateTypes": ["major"],
       "enabled": false
-    },
-    {
-      "matchUpdateTypes": ["major"],
-      "groupName": "major updates"
     }
   ]
 }
