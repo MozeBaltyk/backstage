@@ -5,9 +5,9 @@ A Backstage Vanilla with:
 * [X] Hardened images and unprivileged containers 
 * [X] Relatively small images (backend ~700MB;frontend ~200MB)
 * [X] Kubernetes deployment with helm
-* [ ] Kubernetes integration
-* [ ] Pipeline to Build image and test images        
-* [ ] Renovate to auto-update and track security alerts      
+* [x] Kubernetes integration
+* [x] Pipeline to Build image and test images        
+* [x] Renovate to auto-update and track security alerts      
 
 For the moment, it's a Vanilla backstage which can be use to test new templates and plugins, Test upgrade on backstage or plugins... 
 
